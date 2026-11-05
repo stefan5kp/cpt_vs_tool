@@ -13,19 +13,19 @@ This tool is designed to automate the Vs interpretation process from SCPT. As of
 
 ```
 SCPT_tool/
-├── SCPT_tool.py              # all shared functions (CPT processing, Zhang et al. / Robertson models, layer-based regression)
+├── scpt_tool.py              # all shared functions (CPT processing, Zhang et al. / Robertson models, layer-based regression)
 ├── requirements.txt
-├── interpretation_tool/      # example: SCPT_Tool_V1.ipynb + sample data (AVN_1)
-├── lbr/                      # example: LayerBasedRegression.ipynb + sample data
+├── interpretation_tool/      # example: scpt_tool_v1.ipynb + sample data (avn_1)
+├── lbr/                      # example: layerbasedregression.ipynb + sample data
 └── dev/                      # model development (not needed to use the tools)
-    ├── src_files/            # VSPDB query (VSPDB_2_Query.ipynb) and the CPT, travel time, groundwater and geology tables
+    ├── src_files/            # VSPDB query (vspdb_2_query.ipynb) and the CPT, travel time, groundwater and geology tables
     ├── groundwater/          # groundwater table depths from Ma et al. (2025) and USGS topography, with validation
-    ├── data_observation/     # Data_Observation.ipynb + residual data (CPT_Res_Data_R3.csv, TT_Res_Data_R3.csv)
-    ├── regression/           # model regression: V6_MLE.ipynb (maximum likelihood) and Bayesian_pymc.ipynb
+    ├── data_observation/     # data_observation.ipynb + residual data (cpt_res_data_r3.csv, tt_res_data_r3.csv)
+    ├── regression/           # model regression: v6_mle.ipynb (maximum likelihood) and bayesian_pymc.ipynb
     └── results/              # results_comparison_gui.ipynb: compares the CPT-Vs models with the measured profiles
 ```
 
-Each tool notebook adds the repository root to its path and imports from `SCPT_tool.py`, and the `dev/` notebooks read their data through relative paths, so run the notebooks from inside their own folder. Install dependencies with `pip install -r requirements.txt`.  
+Each tool notebook adds the repository root to its path and imports from `scpt_tool.py`, and the `dev/` notebooks read their data through relative paths, so run the notebooks from inside their own folder. Install dependencies with `pip install -r requirements.txt`.  
 
 ## Update Log 
     
@@ -47,7 +47,7 @@ Each tool notebook adds the repository root to its path and imports from `SCPT_t
     - Updated the all-in-one-tool to the most recent version and added function for exporting the site specific Vs result.  
 
 2026-10-27  
-    - Consolidated all functions into a single SCPT_tool.py at the repository root; each model folder now contains one example notebook and its sample data.  
+    - Consolidated all functions into a single scpt_tool.py at the repository root; each model folder now contains one example notebook and its sample data.  
     - Layer-Based Regression now uses the same regression algorithm and cost function as the all-in-one tool.  
 
 2026-11-01  
