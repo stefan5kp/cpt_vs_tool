@@ -15,12 +15,17 @@ This tool is designed to automate the Vs interpretation process from SCPT. As of
 SCPT_tool/
 ├── SCPT_tool.py              # all shared functions (CPT processing, Zhang et al. / Robertson models, layer-based regression)
 ├── requirements.txt
-├── All_in_one_tool/          # example: SCPT_Tool_V1.ipynb + sample data (AVN_1)
-├── Ergodic_Model/            # example: Ergodic_CPT-Vs_Model.ipynb + sample data
-└── Layer-Based_Regression/   # example: LayerBasedRegression.ipynb + sample data
+├── interpretation_tool/      # example: SCPT_Tool_V1.ipynb + sample data (AVN_1)
+├── lbr/                      # example: LayerBasedRegression.ipynb + sample data
+└── dev/                      # model development (not needed to use the tools)
+    ├── src_files/            # VSPDB query (VSPDB_2_Query.ipynb) and the CPT, travel time, groundwater and geology tables
+    ├── groundwater/          # groundwater table depths from Ma et al. (2025) and USGS topography, with validation
+    ├── data_observation/     # Data_Observation.ipynb + residual data (CPT_Res_Data_R3.csv, TT_Res_Data_R3.csv)
+    ├── regression/           # model regression: V6_MLE.ipynb (maximum likelihood) and Bayesian_pymc.ipynb
+    └── results/              # results_comparison_gui.ipynb: compares the CPT-Vs models with the measured profiles
 ```
 
-Each example notebook adds the repository root to its path and imports from `SCPT_tool.py`, so run the notebooks from inside their own folder. Install dependencies with `pip install -r requirements.txt`.  
+Each tool notebook adds the repository root to its path and imports from `SCPT_tool.py`, and the `dev/` notebooks read their data through relative paths, so run the notebooks from inside their own folder. Install dependencies with `pip install -r requirements.txt`.  
 
 ## Update Log 
     
