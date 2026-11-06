@@ -4,11 +4,10 @@ This tool is designed to automate the Vs interpretation process from SCPT. As of
 
 ## **User Guide**  
     
-1. If you wanted to purely interpret the traveltime data into stepped Vs profiles from SCPT, please use the layer-based regression tool.  
-2. If you wanted to estimate Vs profiles from purely cone penetration data, please use the ergodic model tool.  
-3. Site-specific joint algorithm that leverage both the traveltime and cone penetration data is included in the all-in-one tool.  
-
-
+1. If you wanted to purely interpret the traveltime data into stepped Vs profiles from SCPT, please use the layer-based regression (lbr) tool.  
+2. Interpretation tool interpret Vs profile using Zhang et al. (geo) - only CPT data, Zhang et al. (site-specific) - CPT and travel time data, Robertson (2012) and lbr.  
+3. Regression and data files for the mand utility tools are included in the `dev/` folder.  
+    
 ## Repository Structure  
 
 ```
@@ -52,7 +51,9 @@ Each tool notebook adds the repository root to its path and imports from `scpt_t
 
 2026-11-01  
     - Updated the Zhang et al. model coefficients, Kc and m(Ic) functions, and geology-specific "a" values.  
-    - Site-specific "a" is now fit to the measured travel time of each layer (each CPT point represents an equal share of its layer) instead of the interval velocity.  
+
+2026-11-05  
+    - Introduced `geology.ipynb` to query Wills et al. (2015) surficial geology units in `dev/utilities`.  
 
 ## Citation  
 Zhang, ZS, SJ Brandenberg, JP Stewart (2026). Algorithm for interpreting velocity profiles from seismic Cone Penetration Test data, 13th National Conference on Earthquake Engineering, Portland, OR, EERI
