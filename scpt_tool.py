@@ -1,5 +1,3 @@
-# scpt_tool: shared functions for the interpretation tool and Layer-Based Regression examples.
-# Import packages for use:
 import numpy as np
 import matplotlib.pyplot as plt
 import ngl_tools.smt as smt
@@ -7,21 +5,11 @@ import pwlf
 from itertools import combinations, chain, islice
 from scipy.optimize import least_squares
 
-
-# =============================================================================
-# Utilities
-# =============================================================================
-
 def interleave(v1, v2):
     vout = np.empty(2 * len(v1), dtype=float)
     vout[0::2] = v1
     vout[1::2] = v2
     return vout
-
-
-# =============================================================================
-# CPT processing
-# =============================================================================
 
 def gamma_t (depth, fs, qt):
     # Replace invalid values in CPT_fs and CPT_qt with NaN
@@ -32,9 +20,7 @@ def gamma_t (depth, fs, qt):
     # Compute gamma only for valid values
     valid_mask = ~np.isnan(fs1) & ~np.isnan(qt1)
     gamma = np.full_like(depth, np.nan)  # Initialize with NaN
-    # Calculate gamma using Robertson (2010)
     gamma[valid_mask] = 9.81 * (0.27 * np.log10(fs1[valid_mask]/qt1[valid_mask] * 100) + 0.36 * np.log10(qt1[valid_mask] / 101.3) + 1.236)
-     # Interpolate NaN values
     gamma = np.interp(depth, depth[valid_mask], gamma[valid_mask])
 
     return gamma
@@ -60,30 +46,18 @@ def get_CPT (CPT_depth, CPT_qt, CPT_fs, dGWT):
     sigmavp = sigmav - u
 
     # Compute fz
-    fz = sigmavp/pa
+    sigmavp_atm = sigmavp/pa
 
-    # Calculate Ic, Qtn and their inverse filtered values
+    # Calculate Ic, Qtn and their inverse filtered values (Boulanger and DeJong 2018)
     Ic, Qtn, Fr = smt.get_Ic_Qtn_Fr(CPT_qt, CPT_fs, sigmav, sigmavp)
     qt_inv, fs_inv, Ic_inv = smt.cpt_inverse_filter(CPT_qt, CPT_depth, fs=CPT_fs, sigmav=sigmav, sigmavp=sigmavp)
     Ic_inv, Qtn_inv, Fr_inv = smt.get_Ic_Qtn_Fr(qt_inv, fs_inv, sigmav, sigmavp)
 
-    # Ic correction for Qtn (Zhang et al. kc)
-    kc = 1 + 5 / (1 + np.exp(-ZHANG_KC[0] * Ic_inv + ZHANG_KC[1]))
-    Qtncs = Qtn_inv * kc
+    return sigmavp_atm, Ic_inv, Qtn_inv, CPT_depth, Qtn, Ic
 
-    return fz, Ic_inv, Qtncs, CPT_depth, Qtn_inv, Ic_inv, Qtn, Ic, kc
-
-
-# =============================================================================
-# CPT-Vs models
-# =============================================================================
-
-# Zhang et al. model coefficients: ln(Vs) = b0 * ln(kc * Qtn) + m(Ic) * ln(sigma_v'/pa) + a
-ZHANG_B = [0.224117, 1.278293, 3.385425]   # b0, and m(Ic) = 0.1 + 0.4 / (1 + exp(-b1 * Ic + b2))
-ZHANG_KC = [5.482742, 12.320768]           # kc(Ic) = 1 + 5 / (1 + exp(-c1 * Ic + c2))
-
-# Geology-specific model offset "a" for the Zhang et al. model
-ZHANG_A = {'Beach and Dune': 4.402626,
+# Zhang et al. model coefficients
+b_coeff = [0.224117, 1.278293, 3.385425, 5.482742, 12.320768]
+a_coeff = {'Beach and Dune': 4.402626,
            'Floodplain':     4.255830,
            'Glacial':        4.195240,
            'Lagoonal':       4.195468,
@@ -95,21 +69,14 @@ ZHANG_A = {'Beach and Dune': 4.402626,
            'Qoa':            4.515429,
            'Qs':             4.420910}
 
+def zhang_vs(Qtn, sigmavp_atm, Ic, b_coeff, a):
+    m = 0.1 + 0.4 / (1 + np.exp(-b_coeff[1] * Ic + b_coeff[2]))
+    kc = 1 + 5 / (1 + np.exp(-b_coeff[3] * Ic + b_coeff[4]))
+    return b_coeff[0] * np.log(kc * Qtn) + m * np.log(sigmavp_atm) + a
 
 def robertson_2012(Qtn, fz, Ic):
     # Robertson (2012): ln(Vs) = 1.93 + 0.5 * ln(Qtn) + 0.25 * ln(sigma_v'/pa) + 0.63 * Ic
     return np.exp(1.93 + 0.5 * np.log(Qtn) + 0.25 * np.log(fz) + 0.63 * Ic)
-
-
-def zhang_lnVs(Qcncs, fz, Ic, a, b = ZHANG_B):
-    # Zhang et al. model, returns ln(Vs). Qcncs is the kc-corrected Qtn from get_CPT
-    m = 0.1 + 0.4 / (1 + np.exp(-b[1] * Ic + b[2]))
-    return b[0] * np.log(Qcncs) + m * np.log(fz) + a
-
-
-# =============================================================================
-# Travel time processing and CPT-to-layer averaging
-# =============================================================================
 
 def get_TT (TT_depth, Meas_TT, source = 1.0):
     # Correction of Source Offset Distance
@@ -148,21 +115,16 @@ def layer_average_velocity(lnVs, CPT_depth, ztop, zbot):
 def site_specific(x, CPT_depth, Qtncs, fz, Ic, ztop, zbot, DTT):
     # Residual function for fitting the site-specific "a" of the Zhang et al. model to the measured travel times.
     # Layers with no CPT points (e.g. below the end of the sounding) or a non-positive travel time are dropped.
-    tt_hat = layer_travel_time(zhang_lnVs(Qtncs, fz, Ic, x), CPT_depth, ztop, zbot)
+    tt_hat = layer_travel_time(zhang_vs(Qtncs, fz, Ic, b_coeff, x), CPT_depth, ztop, zbot)
     valid = ~np.isnan(tt_hat) & (DTT > 0)
     return np.log(DTT[valid] / 1000) - np.log(tt_hat[valid])
 
 
-# =============================================================================
-# Layer-based regression of travel time data
-# =============================================================================
+"""
+Layer-based regression of travel time data
+"""
 
 def _best_breaks(tt_depth, traveltime, candidates, n_bp, chunk = 200_000, n_keep = 20):
-    # Exhaustive search over all n_bp-combinations of candidate breakpoints (same as looping
-    # pwlf.fit_with_breaks), but vectorized: the continuous piecewise-linear fit uses the hinge
-    # basis [1, x - xmin, (x - c1)+, ...], so the normal equations for any combo are a submatrix
-    # of one precomputed Gram matrix. Combos are scored in chunks, and the best few are re-checked
-    # exactly with lstsq to avoid any round-off in the normal equations.
     x = np.asarray(tt_depth, dtype=float)
     y = np.asarray(traveltime, dtype=float)
     candidates = np.asarray(candidates, dtype=float)
@@ -407,15 +369,6 @@ def LBR(tt_depth, Meas_TT, slope_break_method = 1, breakpoints = None, source = 
 
     return velocity, tt_corrected, results, top_depth, bottom_depth
 
-
-# Earlier name of LBR, kept for the lbr/ example notebook
-Master = LBR
-
-
-# =============================================================================
-# Interpretation tool: all four methods for one SCPT sounding
-# =============================================================================
-
 def predicted_DTT(lnVs, CPT_depth, ztop, zbot, DTT):
     # Predicted travel time (ms) through each layer and its half depth, for layers with CPT points and DTT > 0
     tt_hat = layer_travel_time(lnVs, CPT_depth, ztop, zbot) * 1000
@@ -423,22 +376,24 @@ def predicted_DTT(lnVs, CPT_depth, ztop, zbot, DTT):
     return tt_hat[valid], 0.5 * (ztop[valid] + zbot[valid])
 
 
-def compute_profiles(CPT_depth, CPT_qc, CPT_qt, CPT_fs, dGWT, TT_depth, Meas_TT, geology,
-                     slope_break_method = 0, breakpoints = None, source = 1.0):
-    # Zhang et al. (global and site-specific) with qc, Robertson (2012) with qt, and LBR of the travel time data
+"""
+Compute four Vs prfiles: Zhang et al. (geo), Zhang et al. (site-specific), Robertson (2012), and LBR (layer-based regression)
+"""
 
-    # Zhang et al. inputs: inverse-filtered Qtn and Ic, kc-corrected Qtn
-    fz, Ic, Qtncs, CPT_depth_all, Qtn_inv, Ic_inv, Qtn, Ic_raw, kc = get_CPT(CPT_depth, CPT_qc, CPT_fs, dGWT)
-    valid = (fz > 0) & (Qtncs > 0) & (Ic >= 1)
-    CPT_depth, fz, Ic, Qtn_inv, Qtncs, kc = CPT_depth_all[valid], fz[valid], Ic[valid], Qtn_inv[valid], Qtncs[valid], kc[valid]
+def compute_profiles(CPT_depth, CPT_qt, CPT_fs, dGWT, TT_depth, Meas_TT, geology,
+                     slope_break_method = 0, breakpoints = None, source = 1.0):
+    # Zhang et al. inputs: inverse-filtered Qtn and Ic
+    sigmavp_atm, Ic_inv, Qtn_inv, CPT_depth_all, Qtn, Ic = get_CPT(CPT_depth, CPT_qt, CPT_fs, dGWT)
+    valid = (sigmavp_atm > 0) & (Qtn_inv > 0) & (Ic_inv >= 1)
+    CPT_depth, sigmavp_atm, Ic_inv, Qtn_inv, Qtn, Ic = CPT_depth_all[valid], sigmavp_atm[valid], Ic_inv[valid], Qtn_inv[valid], Qtn[valid], Ic[valid]
 
     # Global velocity with the geology-specific a
-    a_geo = ZHANG_A[geology]
-    global_velocity = np.exp(zhang_lnVs(Qtncs, fz, Ic, a_geo))
+    a_geo = a_coeff[geology]
+    global_velocity = np.exp(zhang_vs(Qtn_inv, sigmavp_atm, Ic_inv, b_coeff, a_geo))
+    kc = 1 + 5 / (1 + np.exp(-b_coeff[3] * Ic_inv + b_coeff[4]))
 
     # Robertson (2012) with Qtn and Ic that are not inverse-filtered
-    fz_rob, _, _, _, _, _, Qtn_rob, Ic_rob, _ = get_CPT(CPT_depth_all, CPT_qt, CPT_fs, dGWT)
-    Robertson_Vs = robertson_2012(Qtn_rob, fz_rob, Ic_rob)
+    Robertson_Vs = robertson_2012(Qtn, sigmavp_atm, Ic)
 
     # Measured travel time layers and interval velocity
     ztop_TT, zbot_TT, DTT = get_TT(TT_depth, Meas_TT, source = source)
@@ -447,9 +402,9 @@ def compute_profiles(CPT_depth, CPT_qc, CPT_qt, CPT_fs, dGWT, TT_depth, Meas_TT,
     Vsi = (zbot_TT - ztop_TT) / DTT * 1000
 
     # Site-specific a fitted to the measured travel times
-    result = least_squares(site_specific, x0 = 4.0, args = (CPT_depth, Qtncs, fz, Ic, ztop_TT, zbot_TT, DTT))
+    result = least_squares(site_specific, x0 = 4.0, args = (CPT_depth, Qtn_inv, sigmavp_atm, Ic_inv, ztop_TT, zbot_TT, DTT))
     a_site_specific = result.x[0]
-    site_specific_velocity = np.exp(zhang_lnVs(Qtncs, fz, Ic, a_site_specific))
+    site_specific_velocity = np.exp(zhang_vs(Qtn_inv, sigmavp_atm, Ic_inv, b_coeff, a_site_specific))
     tt_hat_ss, halfdepth_ss = predicted_DTT(np.log(site_specific_velocity), CPT_depth, ztop_TT, zbot_TT, DTT)
     tt_hat_global, halfdepth_global = predicted_DTT(np.log(global_velocity), CPT_depth, ztop_TT, zbot_TT, DTT)
 
@@ -458,23 +413,27 @@ def compute_profiles(CPT_depth, CPT_qc, CPT_qt, CPT_fs, dGWT, TT_depth, Meas_TT,
                                                                   breakpoints = breakpoints, source = source)
 
     return dict(geology=geology, a_geo=a_geo, a_site_specific=a_site_specific,
-                CPT_depth=CPT_depth, sigmavp=fz, Ic=Ic, Qtn=Qtn_inv, kc=kc,
+                CPT_depth=CPT_depth, sigmavp=sigmavp_atm, Ic=Ic_inv, Qtn=Qtn_inv, Qtncs = Qtn_inv * kc, 
                 global_velocity=global_velocity, site_specific_velocity=site_specific_velocity,
                 Robertson_Vs=Robertson_Vs, CPT_depth_rob=CPT_depth_all,
                 TT=TT, TT_depth=TT_depth, halfdepth=halfdepth, DTT=DTT, ztop_TT=ztop_TT, zbot_TT=zbot_TT, Vsi=Vsi,
                 tt_hat_ss=tt_hat_ss, halfdepth_ss=halfdepth_ss, tt_hat_global=tt_hat_global, halfdepth_global=halfdepth_global,
                 LBR_velocity=LBR_velocity, results=results, LBR_ztop=LBR_ztop, LBR_zbot=LBR_zbot)
 
+"""
+six plots function
+"""
+
 
 def plot_profiles(p):
-    CPT_depth, Qtn, kc, sigmavp, Ic = p['CPT_depth'], p['Qtn'], p['kc'], p['sigmavp'], p['Ic']
+    CPT_depth, Qtn, Qtncs, sigmavp, Ic = p['CPT_depth'], p['Qtn'], p['Qtncs'], p['sigmavp'], p['Ic']
     TT, TT_depth, halfdepth, DTT = p['TT'], p['TT_depth'], p['halfdepth'], p['DTT']
     results = p['results']
 
     fig, axs = plt.subplots(1, 6, figsize=(12, 5), dpi = 300)
 
     axs[0].plot(Qtn, CPT_depth, label='Qtn', color = 'grey', linewidth = 1.2)
-    axs[0].plot(Qtn * kc, CPT_depth, label='Qtncs', color='tab:blue', linewidth=1.2)
+    axs[0].plot(Qtncs, CPT_depth, label='Qtncs', color='tab:blue', linewidth=1.2)
     axs[0].set_xlim(0, 1000)
     axs[0].set_xticks(np.arange(0, 1001, 200))
     axs[0].grid(True, which="both", ls="--")
@@ -561,10 +520,10 @@ def plot_profiles(p):
 
     return fig
 
-
-# VsZ (time-averaged velocity from the surface to the bottom of each profile): VsZ = Z / sum(h_i / Vs_i)
+"""
+Compute time-averaged shear wave velocity (VsZ) for CPT and layered profiles.
+"""
 def VsZ_CPT(depth, velocity):
-    # Each CPT point represents the interval above it (first point extends to the surface)
     valid = np.isfinite(depth) & np.isfinite(velocity) & (velocity > 0)
     depth = depth[valid]
     velocity = velocity[valid]
@@ -588,10 +547,4 @@ def compute_VsZ(p):
         'Robertson (2012)': VsZ_CPT(p['CPT_depth_rob'], p['Robertson_Vs']),
         'LBR': VsZ_layered(p['LBR_zbot'], p['LBR_velocity']),
     }
-
-    # VsZp: LBR time-averaged velocity from the first travel time depth to the bottom of the profile
-    top_depth_lim = np.asarray(p['LBR_ztop'], dtype=float)
-    top_depth_lim[0] = np.min(p['TT_depth'])
-    VsZp = (np.max(p['TT_depth']) - np.min(p['TT_depth'])) / np.sum((np.asarray(p['LBR_zbot']) - top_depth_lim) / np.asarray(p['LBR_velocity']))
-
-    return VsZ_results, VsZp
+    return VsZ_results
