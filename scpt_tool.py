@@ -395,6 +395,14 @@ def compute_profiles(CPT_depth, CPT_qt, CPT_fs, dGWT, TT_depth, Meas_TT, geology
     # Robertson (2012) with Qtn and Ic that are not inverse-filtered
     Robertson_Vs = robertson_2012(Qtn, sigmavp_atm, Ic)
 
+    common = dict(geology=geology, a_geo=a_geo,
+                  CPT_depth=CPT_depth, sigmavp=sigmavp_atm, Ic=Ic_inv, Qtn=Qtn_inv, Qtncs = Qtn_inv * kc,
+                  global_velocity=global_velocity, Robertson_Vs=Robertson_Vs, CPT_depth_rob=CPT_depth_all)
+
+    # No travel time data: only Zhang et al. (geo) and Robertson (2012) are computed
+    if TT_depth is None or Meas_TT is None or len(TT_depth) == 0:
+        return dict(common, has_tt=False, a_site_specific=np.nan)
+
     # Measured travel time layers and interval velocity
     ztop_TT, zbot_TT, DTT = get_TT(TT_depth, Meas_TT, source = source)
     TT = TT_depth / np.sqrt(TT_depth**2 + source**2) * Meas_TT
@@ -412,10 +420,8 @@ def compute_profiles(CPT_depth, CPT_qt, CPT_fs, dGWT, TT_depth, Meas_TT, geology
     LBR_velocity, tt_corrected, results, LBR_ztop, LBR_zbot = LBR(TT_depth, Meas_TT, slope_break_method = slope_break_method,
                                                                   breakpoints = breakpoints, source = source)
 
-    return dict(geology=geology, a_geo=a_geo, a_site_specific=a_site_specific,
-                CPT_depth=CPT_depth, sigmavp=sigmavp_atm, Ic=Ic_inv, Qtn=Qtn_inv, Qtncs = Qtn_inv * kc, 
-                global_velocity=global_velocity, site_specific_velocity=site_specific_velocity,
-                Robertson_Vs=Robertson_Vs, CPT_depth_rob=CPT_depth_all,
+    return dict(common, has_tt=True, a_site_specific=a_site_specific,
+                site_specific_velocity=site_specific_velocity,
                 TT=TT, TT_depth=TT_depth, halfdepth=halfdepth, DTT=DTT, ztop_TT=ztop_TT, zbot_TT=zbot_TT, Vsi=Vsi,
                 tt_hat_ss=tt_hat_ss, halfdepth_ss=halfdepth_ss, tt_hat_global=tt_hat_global, halfdepth_global=halfdepth_global,
                 LBR_velocity=LBR_velocity, results=results, LBR_ztop=LBR_ztop, LBR_zbot=LBR_zbot)
@@ -427,10 +433,17 @@ six plots function
 
 def plot_profiles(p):
     CPT_depth, Qtn, Qtncs, sigmavp, Ic = p['CPT_depth'], p['Qtn'], p['Qtncs'], p['sigmavp'], p['Ic']
-    TT, TT_depth, halfdepth, DTT = p['TT'], p['TT_depth'], p['halfdepth'], p['DTT']
-    results = p['results']
+    has_tt = p.get('has_tt', True)
 
-    fig, axs = plt.subplots(1, 6, figsize=(12, 5), dpi = 300)
+    if has_tt:
+        TT, TT_depth, halfdepth, DTT = p['TT'], p['TT_depth'], p['halfdepth'], p['DTT']
+        results = p['results']
+        fig, axs = plt.subplots(1, 6, figsize=(12, 5), dpi = 300)
+        ax_vs = axs[5]
+    else:
+        # Without travel time data: Qtn, sigma_v', Ic and velocity panels only
+        fig, axs = plt.subplots(1, 4, figsize=(8, 5), dpi = 300)
+        ax_vs = axs[3]
 
     axs[0].plot(Qtn, CPT_depth, label='Qtn', color = 'grey', linewidth = 1.2)
     axs[0].plot(Qtncs, CPT_depth, label='Qtncs', color='tab:blue', linewidth=1.2)
@@ -455,57 +468,63 @@ def plot_profiles(p):
     axs[2].set_xlabel('Ic')
     axs[2].legend(loc='upper center', bbox_to_anchor=(0.5, -0.13), fontsize=8)
 
-    axs[3].scatter(DTT, halfdepth, label='Measured $\\Delta$tt', marker='o', edgecolor='black', color = 'white', s=10)
-    axs[3].scatter(p['tt_hat_global'], p['halfdepth_global'], label='Predicted $\\Delta$tt', marker='x', color='tab:blue', s=10)
-    axs[3].scatter(p['tt_hat_ss'], p['halfdepth_ss'], label='Predicted $\\Delta$tt (ss)', marker='x', color='tab:orange', s=10)
-    axs[3].set_xlabel('$\\Delta$tt (ms)')
-    axs[3].set_xlim(0, 10)
-    axs[3].set_xticks(np.arange(0, 11, 2))
-    axs[3].grid(True, which="both", ls="--")
-    axs[3].legend(loc='upper center', bbox_to_anchor=(0.5, -0.13), fontsize=8)
+    if has_tt:
+        axs[3].scatter(DTT, halfdepth, label='Measured $\\Delta$tt', marker='o', edgecolor='black', color = 'white', s=10)
+        axs[3].scatter(p['tt_hat_global'], p['halfdepth_global'], label='Predicted $\\Delta$tt', marker='x', color='tab:blue', s=10)
+        axs[3].scatter(p['tt_hat_ss'], p['halfdepth_ss'], label='Predicted $\\Delta$tt (ss)', marker='x', color='tab:orange', s=10)
+        axs[3].set_xlabel('$\\Delta$tt (ms)')
+        axs[3].set_xlim(0, 10)
+        axs[3].set_xticks(np.arange(0, 11, 2))
+        axs[3].grid(True, which="both", ls="--")
+        axs[3].legend(loc='upper center', bbox_to_anchor=(0.5, -0.13), fontsize=8)
 
-    axs[4].scatter(TT, TT_depth, label='Travel Time Data', color='black', s=10)
-    colors = plt.colormaps['tab10']
+        axs[4].scatter(TT, TT_depth, label='Travel Time Data', color='black', s=10)
+        colors = plt.colormaps['tab10']
 
-    # Plot each segment with a different color
-    for i in range(len(results['breaks']) - 1):
-        # Define segment depth range
-        z_start = results['breaks'][i]
-        z_end = results['breaks'][i + 1]
+        # Plot each segment with a different color
+        for i in range(len(results['breaks']) - 1):
+            # Define segment depth range
+            z_start = results['breaks'][i]
+            z_end = results['breaks'][i + 1]
 
-        # Get depths in this segment (new_depths ensures breaks are included)
-        segment_mask = (results['new_depths'] >= z_start) & (results['new_depths'] <= z_end)
-        segment_depths = results['new_depths'][segment_mask]
-        segment_tt = results['fitted_values_for_plot'][segment_mask]
+            # Get depths in this segment (new_depths ensures breaks are included)
+            segment_mask = (results['new_depths'] >= z_start) & (results['new_depths'] <= z_end)
+            segment_depths = results['new_depths'][segment_mask]
+            segment_tt = results['fitted_values_for_plot'][segment_mask]
 
-        # Plot segment
-        axs[4].plot(segment_tt, segment_depths, color=colors(i))
+            # Plot segment
+            axs[4].plot(segment_tt, segment_depths, color=colors(i))
 
-    axs[4].set_xlabel('Travel Time (ms)')
-    axs[4].set_xlim(0, np.max(TT) * 1.1)
-    if np.max(TT) > 150:
-        axs[4].set_xticks(np.arange(0, np.max(TT) * 1.1, 50))
-    elif np.max(TT) > 90:
-        axs[4].set_xticks(np.arange(0, np.max(TT) * 1.1, 30))
-    elif np.max(TT) > 50:
-        axs[4].set_xticks(np.arange(0, np.max(TT) * 1.1, 20))
-    else:
-        axs[4].set_xticks(np.arange(0, np.max(TT) * 1.1, 10))
-    axs[4].grid(True, which="both", ls="--")
-    axs[4].legend(loc='upper center', bbox_to_anchor=(0.5, -0.13), fontsize=8)
+        axs[4].set_xlabel('Travel Time (ms)')
+        axs[4].set_xlim(0, np.max(TT) * 1.1)
+        if np.max(TT) > 150:
+            axs[4].set_xticks(np.arange(0, np.max(TT) * 1.1, 50))
+        elif np.max(TT) > 90:
+            axs[4].set_xticks(np.arange(0, np.max(TT) * 1.1, 30))
+        elif np.max(TT) > 50:
+            axs[4].set_xticks(np.arange(0, np.max(TT) * 1.1, 20))
+        else:
+            axs[4].set_xticks(np.arange(0, np.max(TT) * 1.1, 10))
+        axs[4].grid(True, which="both", ls="--")
+        axs[4].legend(loc='upper center', bbox_to_anchor=(0.5, -0.13), fontsize=8)
 
-    axs[5].plot(p['global_velocity'], CPT_depth, label='Zhang et al.', color='tab:blue', linewidth = 1.2)
-    axs[5].plot(p['site_specific_velocity'], CPT_depth, label='Zhang et al. (ss)', color='tab:orange', linewidth = 1.2)
-    axs[5].plot(p['Robertson_Vs'], p['CPT_depth_rob'], label='Robertson (2012)', color='grey', linewidth = 1.2)
-    axs[5].plot(interleave(p['LBR_velocity'], p['LBR_velocity']), interleave(p['LBR_ztop'], p['LBR_zbot']), label='LBR', color='black', linewidth = 1.2)
-    axs[5].set_xlim(0, 1000)
-    axs[5].set_xticks(np.arange(0, 1001, 200))
-    axs[5].set_xlabel('Velocity (m/s)')
-    axs[5].legend(loc='upper center', bbox_to_anchor=(0.5, -0.13), fontsize=8)
-    axs[5].grid(True, which="both", ls="--")
+    ax_vs.plot(p['global_velocity'], CPT_depth, label='Zhang et al.', color='tab:blue', linewidth = 1.2)
+    if has_tt:
+        ax_vs.plot(p['site_specific_velocity'], CPT_depth, label='Zhang et al. (ss)', color='tab:orange', linewidth = 1.2)
+    ax_vs.plot(p['Robertson_Vs'], p['CPT_depth_rob'], label='Robertson (2012)', color='grey', linewidth = 1.2)
+    if has_tt:
+        ax_vs.plot(interleave(p['LBR_velocity'], p['LBR_velocity']), interleave(p['LBR_ztop'], p['LBR_zbot']), label='LBR', color='black', linewidth = 1.2)
+    ax_vs.set_xlim(0, 1000)
+    ax_vs.set_xticks(np.arange(0, 1001, 200))
+    ax_vs.set_xlabel('Velocity (m/s)')
+    ax_vs.legend(loc='upper center', bbox_to_anchor=(0.5, -0.13), fontsize=8)
+    ax_vs.grid(True, which="both", ls="--")
 
     # Share common y-axis limits across all subplots
-    y_max = np.nanmax([np.nanmax(CPT_depth), np.nanmax(p['zbot_TT']), np.nanmax(TT_depth)])
+    if has_tt:
+        y_max = np.nanmax([np.nanmax(CPT_depth), np.nanmax(p['zbot_TT']), np.nanmax(TT_depth)])
+    else:
+        y_max = np.nanmax(CPT_depth)
     for ax in axs:
         ax.set_ylim(y_max + 1, 0)  # inverted depth axis, same range for all
 
@@ -541,10 +560,10 @@ def VsZ_layered(zbot, velocity):
 
 
 def compute_VsZ(p):
-    VsZ_results = {
-        'Zhang et al.': VsZ_CPT(p['CPT_depth'], p['global_velocity']),
-        'Zhang et al. (ss)': VsZ_CPT(p['CPT_depth'], p['site_specific_velocity']),
-        'Robertson (2012)': VsZ_CPT(p['CPT_depth_rob'], p['Robertson_Vs']),
-        'LBR': VsZ_layered(p['LBR_zbot'], p['LBR_velocity']),
-    }
+    VsZ_results = {'Zhang et al.': VsZ_CPT(p['CPT_depth'], p['global_velocity'])}
+    if p.get('has_tt', True):
+        VsZ_results['Zhang et al. (ss)'] = VsZ_CPT(p['CPT_depth'], p['site_specific_velocity'])
+    VsZ_results['Robertson (2012)'] = VsZ_CPT(p['CPT_depth_rob'], p['Robertson_Vs'])
+    if p.get('has_tt', True):
+        VsZ_results['LBR'] = VsZ_layered(p['LBR_zbot'], p['LBR_velocity'])
     return VsZ_results
