@@ -11,17 +11,19 @@ This tool is designed to automate the Vs interpretation process from SCPT. As of
 ## Repository Structure  
 
 ```
-SCPT_tool/
+cpt_vs_tool/
 ├── scpt_tool.py              # all shared functions (CPT processing, Zhang et al. / Robertson models, layer-based regression)
 ├── requirements.txt
 ├── interpretation_tool/      # example: scpt_tool_v1.ipynb + sample data (avn_1)
 ├── lbr/                      # example: layerbasedregression.ipynb + sample data
 └── dev/                      # model development (not needed to use the tools)
     ├── src_files/            # VSPDB query (vspdb_2_query.ipynb) and the CPT, travel time, groundwater and geology tables
-    ├── groundwater/          # groundwater table depths from Ma et al. (2025) and USGS topography, with validation
+    ├── groundwater/          # groundwater table depths from Ma et al. (2026) and USGS topography, with validation
     ├── data_observation/     # data_observation.ipynb + residual data (cpt_res_data_r3.csv, tt_res_data_r3.csv)
     ├── regression/           # model regression: v6_mle.ipynb (maximum likelihood) and bayesian_pymc.ipynb
-    └── results/              # results_comparison_gui.ipynb: compares the CPT-Vs models with the measured profiles
+    ├── results/              # results_comparison_gui.ipynb: compares the CPT-Vs models with the measured profiles
+    ├── sl_validation/        # sl_validation.ipynb: all-in-one tool applied to the Perris and UCD validation sites
+    └── utilities/            # geology.ipynb: Wills et al. (2015) surficial geology / Vs30 query (wills_shp/ shapefile)
 ```
 
 Each tool notebook adds the repository root to its path and imports from `scpt_tool.py`, and the `dev/` notebooks read their data through relative paths, so run the notebooks from inside their own folder. Install dependencies with `pip install -r requirements.txt`.  
