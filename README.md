@@ -104,7 +104,7 @@ Run the tests with `pip install -e ".[test]"` and then `pytest`.
     - Introduced `geology.ipynb` to query Wills et al. (2015) surficial geology units in `dev/utilities`.  
 
 2026-11-10  
-    - Introduced `topo.ipynb` and `groundwater.ipynb` to query USGS topo elevation and Ma et al. 2026 groundwater data in `dev/utilities`. 
+    - Introduced `topo.ipynb` and `groundwater.ipynb` to query USGS topo elevation and Ma et al. 2026 groundwater data in `dev/utilities`.  
     - Packaged the tool for PyPI as `cpt-vs-tool` (`pip install cpt-vs-tool`): `scpt_tool.py` moved to `src/cpt_vs_tool/vs.py`, and the notebooks now use `from cpt_vs_tool import ...`.  
 
 ## Citations  
