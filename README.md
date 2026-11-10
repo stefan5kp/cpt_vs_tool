@@ -1,11 +1,11 @@
 # cpt_vs_tool
 
-This tool is designed to automate the Vs interpretation process from SCPT. As of May 15, 2026, the layer-based regression tool is available in the folder with sample files. All-in-one tool is a comprehensive tool set for SCPT - Vs interpretation or Vs estimate from CPT data. The tool is currently at beta stage, more features will be added to the tool at its official release.  
+This tool is designed to automate the Vs interpretation process from SCPT. `interpretation_tool` provides the all-in-one tool for interpreting Vs profiles from Zhang et al. (2026), Robertson (2012) and the layer-based regression approach. And `lbr` interpret Vs profiles from the conventional layer-based regression approach using only the travel time data. 
 
 ## **User Guide**  
     
-1. If you wanted to purely interpret the traveltime data into stepped Vs profiles from SCPT, please use the layer-based regression (lbr) tool.  
-2. Interpretation tool interpret Vs profile using Zhang et al. (geo) - only CPT data, Zhang et al. (site-specific) - CPT and travel time data, Robertson (2012) and lbr.  
+1. Purely interpret the traveltime data into stepped Vs profiles from SCPT, please use the layer-based regression `lbr` tool.  
+2. Interpretation tool interpret Vs profile using Zhang et al. (2026) (geo) - only CPT data, Zhang et al. (2026) (site-specific) - CPT and travel time data, Robertson (2012) and lbr.  
 3. Regression and data files for the mand utility tools are included in the `dev/` folder.  
     
 ## Repository Structure  
@@ -17,13 +17,13 @@ cpt_vs_tool/
 ├── interpretation_tool/      # example: scpt_tool_v1.ipynb + sample data (avn_1)
 ├── lbr/                      # example: layerbasedregression.ipynb + sample data
 └── dev/                      # model development (not needed to use the tools)
-    ├── src_files/            # VSPDB query (vspdb_2_query.ipynb) and the CPT, travel time, groundwater and geology tables
-    ├── groundwater/          # groundwater table depths from Ma et al. (2026) and USGS topography, with validation
-    ├── data_observation/     # data_observation.ipynb + residual data (cpt_res_data_r3.csv, tt_res_data_r3.csv)
-    ├── regression/           # model regression: v6_mle.ipynb (maximum likelihood) and bayesian_pymc.ipynb
-    ├── results/              # results_comparison_gui.ipynb: compares the CPT-Vs models with the measured profiles
-    ├── sl_validation/        # sl_validation.ipynb: all-in-one tool applied to the Perris and UCD validation sites
-    └── utilities/            # geology.ipynb: Wills et al. (2015) surficial geology / Vs30 query (wills_shp/ shapefile)
+    ├── src_files/            # VSPDB query (vspdb_2_query.ipynb) and the CPT, travel time, groundwater and geology tables  
+    ├── groundwater/          # groundwater table depths from Ma et al. (2026) and USGS topography, with validation  
+    ├── data_observation/     # data_observation.ipynb + residual data (cpt_res_data_r3.csv, tt_res_data_r3.csv)  
+    ├── regression/           # model regression: v6_mle.ipynb (maximum likelihood) and bayesian_pymc.ipynb  
+    ├── results/              # results_comparison_gui.ipynb: compares the CPT-Vs models with the measured profiles  
+    ├── sl_validation/        # sl_validation.ipynb: all-in-one tool applied to the Perris and UCD validation sites  
+    └── utilities/            # geology.ipynb: Wills et al. (2015) surficial geology / Vs30 query (wills_shp/ shapefile)  
 ```
 
 Each tool notebook adds the repository root to its path and imports from `scpt_tool.py`, and the `dev/` notebooks read their data through relative paths, so run the notebooks from inside their own folder. Install dependencies with `pip install -r requirements.txt`.  
@@ -57,5 +57,10 @@ Each tool notebook adds the repository root to its path and imports from `scpt_t
 2026-11-05  
     - Introduced `geology.ipynb` to query Wills et al. (2015) surficial geology units in `dev/utilities`.  
 
-## Citation  
-Zhang, ZS, SJ Brandenberg, JP Stewart (2026). Algorithm for interpreting velocity profiles from seismic Cone Penetration Test data, 13th National Conference on Earthquake Engineering, Portland, OR, EERI
+2026-11-10  
+    - Introduced `topo.ipynb` and `groundwater.ipynb` to query USGS topo elevation and Ma et al. 2026 groundwater data in `dev/utilities`. 
+
+## Citations  
+Zhang, ZS, SJ Brandenberg, JP Stewart (2026). Algorithm for interpreting velocity profiles from seismic Cone Penetration Test data, 13th National Conference on Earthquake Engineering, Portland, OR, EERI  
+
+Zhang, ZS, SJ Brandenberg, JP Stewart (2027). CPT-Based Vs Estimation with or without Travel Time Measurements, ASCE2027, Philadelphia, PA, ASCE  
