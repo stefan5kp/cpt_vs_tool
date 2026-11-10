@@ -1,0 +1,66 @@
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cpt-vs-tool"
+version = "0.1.0b1"
+description = "Shear wave velocity (Vs) interpretation from seismic CPT data: Zhang et al. CPT-Vs model, Robertson (2012) and layer-based regression."
+readme = "README.md"
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
+requires-python = ">=3.9"
+authors = [
+    { name = "Zhaoting S. Zhang" },
+    { name = "Scott J. Brandenberg" },
+    { name = "Jonathan P. Stewart" },
+]
+keywords = ["CPT", "SCPT", "shear wave velocity", "Vs", "geotechnical", "site characterization", "travel time"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "pwlf",
+    "ngl_tools",
+    # ngl_tools.smt imports scikit-learn but does not declare it as a dependency
+    "scikit-learn",
+]
+
+[project.optional-dependencies]
+# Extra packages needed to run the example notebooks in interpretation_tool/ and lbr/
+notebooks = [
+    "pandas",
+    "ipywidgets",
+    "ipympl",
+    "jupyter",
+]
+test = ["pytest", "pandas"]
+
+[project.urls]
+Homepage = "https://github.com/stefan5kp/cpt_vs_tool"
+Repository = "https://github.com/stefan5kp/cpt_vs_tool"
+Issues = "https://github.com/stefan5kp/cpt_vs_tool/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cpt_vs_tool"]
+
+[tool.hatch.build.targets.sdist]
+# Keep the source distribution small: the package, tests and metadata only (no dev/ data or notebooks)
+include = [
+    "src/cpt_vs_tool",
+    "tests",
+    "README.md",
+    "LICENSE",
+    "pyproject.toml",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore:FigureCanvasAgg is non-interactive:UserWarning"]

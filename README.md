@@ -2,6 +2,40 @@
 
 This tool is designed to automate the Vs interpretation process from SCPT. `interpretation_tool` provides the all-in-one tool for interpreting Vs profiles from Zhang et al. (2026), Robertson (2012) and the layer-based regression approach. And `lbr` interpret Vs profiles from the conventional layer-based regression approach using only the travel time data. 
 
+## Installation
+
+```
+pip install cpt-vs-tool
+```
+
+To run the example notebooks from a clone of this repository, install the package in editable mode with the notebook extras from the repository root:
+
+```
+pip install -e ".[notebooks]"
+```
+
+## Quick Start
+
+```python
+import numpy as np
+import pandas as pd
+from cpt_vs_tool import compute_profiles, plot_profiles, compute_VsZ, a_coeff
+
+cpt = pd.read_csv("avn_1.csv")       # depth (m), qt (MPa), fs (MPa)
+tt = pd.read_csv("avn_1_tt.csv")     # depth (m), traveltime (ms)
+
+p = compute_profiles(
+    cpt["depth (m)"].to_numpy(), cpt["qt (MPa)"].to_numpy(), cpt["fs (MPa)"].to_numpy(),
+    dGWT=31.0,                                   # groundwater table depth (m)
+    TT_depth=tt["depth (m)"].to_numpy(), Meas_TT=tt["traveltime (ms)"].to_numpy(),
+    geology="Qal1",                              # one of a_coeff.keys()
+)
+plot_profiles(p)
+print(compute_VsZ(p))
+```
+
+Pass `TT_depth=None, Meas_TT=None` when there is no travel time data; only Zhang et al. (geo) and Robertson (2012) are then computed. Use `LBR` for layer-based regression of travel time data alone.
+
 ## **User Guide**  
     
 1. Purely interpret the traveltime data into stepped Vs profiles from SCPT, please use the layer-based regression `lbr` tool.  
@@ -12,8 +46,14 @@ This tool is designed to automate the Vs interpretation process from SCPT. `inte
 
 ```
 cpt_vs_tool/
-├── scpt_tool.py              # all shared functions (CPT processing, Zhang et al. / Robertson models, layer-based regression)
-├── requirements.txt
+├── pyproject.toml            # package metadata and dependencies (PyPI: cpt-vs-tool)
+├── requirements.txt          # editable install of the package + notebook extras
+├── LICENSE                   # BSD-3-Clause
+├── src/cpt_vs_tool/          # the installable package
+│   ├── __init__.py           # public API (from cpt_vs_tool import ...)
+│   └── vs.py                 # all functions (CPT processing, Zhang et al. / Robertson models, layer-based regression)
+├── tests/                    # pytest suite + sample data (avn_1)
+├── .github/workflows/        # publish.yml: build, test and publish to PyPI on a GitHub release
 ├── interpretation_tool/      # example: scpt_tool_v1.ipynb + sample data (avn_1)
 ├── lbr/                      # example: layerbasedregression.ipynb + sample data
 └── dev/                      # model development (not needed to use the tools)
@@ -26,7 +66,9 @@ cpt_vs_tool/
     └── utilities/            # geology.ipynb: Wills et al. (2015) surficial geology / Vs30 query (wills_shp/ shapefile)  
 ```
 
-Each tool notebook adds the repository root to its path and imports from `scpt_tool.py`, and the `dev/` notebooks read their data through relative paths, so run the notebooks from inside their own folder. Install dependencies with `pip install -r requirements.txt`.  
+The tool notebooks import from the installed `cpt_vs_tool` package (see Installation), and all notebooks read their data through relative paths, so run them from inside their own folder. `pip install -r requirements.txt` is equivalent to `pip install -e ".[notebooks]"`; the `dev/` notebooks need additional packages (e.g. pymc, geopandas).  
+
+Run the tests with `pip install -e ".[test]"` and then `pytest`.  
 
 ## Update Log 
     
@@ -59,6 +101,7 @@ Each tool notebook adds the repository root to its path and imports from `scpt_t
 
 2026-11-10  
     - Introduced `topo.ipynb` and `groundwater.ipynb` to query USGS topo elevation and Ma et al. 2026 groundwater data in `dev/utilities`. 
+    - Packaged the tool for PyPI as `cpt-vs-tool` (`pip install cpt-vs-tool`): `scpt_tool.py` moved to `src/cpt_vs_tool/vs.py`, and the notebooks now use `from cpt_vs_tool import ...`.  
 
 ## Citations  
 Zhang, ZS, SJ Brandenberg, JP Stewart (2026). Algorithm for interpreting velocity profiles from seismic Cone Penetration Test data, 13th National Conference on Earthquake Engineering, Portland, OR, EERI  
