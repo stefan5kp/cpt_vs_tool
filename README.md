@@ -21,15 +21,19 @@ import numpy as np
 import pandas as pd
 from cpt_vs_tool import compute_profiles, plot_profiles, compute_VsZ, a_coeff
 
-cpt = pd.read_csv("avn_1.csv")       # depth (m), qt (MPa), fs (MPa)
-tt = pd.read_csv("avn_1_tt.csv")     # depth (m), traveltime (ms)
+cpt = pd.read_csv("avn_1.csv")
+tt = pd.read_csv("avn_1_tt.csv")
 
 p = compute_profiles(
-    cpt["depth (m)"].to_numpy(), cpt["qt (MPa)"].to_numpy(), cpt["fs (MPa)"].to_numpy(),
-    dGWT=31.0,                                   # groundwater table depth (m)
-    TT_depth=tt["depth (m)"].to_numpy(), Meas_TT=tt["traveltime (ms)"].to_numpy(),
-    geology="Qal1",                              # one of a_coeff.keys()
+    cpt["depth (m)"].to_numpy(),                # CPT depth
+    cpt["qt (MPa)"].to_numpy(),                 # qt
+    cpt["fs (MPa)"].to_numpy(),                 # fs
+    dGWT=31.0,                                  # groundwater 
+    TT_depth=tt["depth (m)"].to_numpy(),        # travel time depth
+    Meas_TT=tt["traveltime (ms)"].to_numpy(),   # travel time measurement
+    geology="Qal1",                             # surficial geology
 )
+
 plot_profiles(p)
 print(compute_VsZ(p))
 ```
