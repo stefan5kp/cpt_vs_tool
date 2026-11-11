@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cpt-vs-tool"
-version = "0.1.0b1"
+version = "0.1.0b2"
 description = "Shear wave velocity (Vs) interpretation from seismic CPT data: Zhang et al. CPT-Vs model, Robertson (2012) and layer-based regression."
 readme = "README.md"
 license = "BSD-3-Clause"
