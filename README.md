@@ -8,13 +8,13 @@ This tool is designed to automate the Vs interpretation process from SCPT. `inte
 pip install cpt-vs-tool
 ```
 
-To run the example notebooks from a clone of this repository, install the package in editable mode with the notebook extras from the repository root:
+To run the example notebooks from a clone of the repository, install the package in editable mode with the notebook extras from the repository root:
 
 ```
 pip install -e ".[notebooks]"
 ```
 
-## Quick Start
+## Example
 
 ```python
 import numpy as np
@@ -57,7 +57,7 @@ cpt_vs_tool/
 │   ├── __init__.py           # public API (from cpt_vs_tool import ...)
 │   └── vs.py                 # all functions (CPT processing, Zhang et al. / Robertson models, layer-based regression)
 ├── tests/                    # pytest suite + sample data (avn_1)
-├── .github/workflows/        # publish.yml: build, test and publish to PyPI on a GitHub release
+├── .github/workflows/        # main.yml: build, test and publish to PyPI on a tag push
 ├── interpretation_tool/      # example: scpt_tool_v1.ipynb + sample data (avn_1)
 ├── lbr/                      # example: layerbasedregression.ipynb + sample data
 └── dev/                      # model development (not needed to use the tools)
@@ -72,40 +72,9 @@ cpt_vs_tool/
 
 The tool notebooks import from the installed `cpt_vs_tool` package (see Installation), and all notebooks read their data through relative paths, so run them from inside their own folder. `pip install -r requirements.txt` is equivalent to `pip install -e ".[notebooks]"`; the `dev/` notebooks need additional packages (e.g. pymc, geopandas).  
 
-Run the tests with `pip install -e ".[test]"` and then `pytest`.  
+## Update Log
 
-## Update Log 
-    
-2026-05-19  
-	- Correction Made to the Robertson 2012 Calculation in the all-in-one tool.  
-	- Ergodic model Tool is now available with the most recent version of the model and the corrected Robertson 2012 Calculation. 
-
-2026-06-01  
-    - Updated input parameters for the ergodic model to be inverse-filtered qt and fs (Boulanger and DeJong, 2018).  
-    - Added Kc plot and shading for Ic > 2.6 for ergodic model.  
-    - Updated name to be Zhang et al. model.  
-    - Updated the cost function for the layer-based regression tool.  
-
-2026-06-22  
-	- Updated input parameters to be qc for the Zhang et al. model (without pore pressure correction).  
-	- Updated the model offset "a" to be geology specifc.  
-
-2026-08-25  
-    - Updated the all-in-one-tool to the most recent version and added function for exporting the site specific Vs result.  
-
-2026-10-27  
-    - Consolidated all functions into a single scpt_tool.py at the repository root; each model folder now contains one example notebook and its sample data.  
-    - Layer-Based Regression now uses the same regression algorithm and cost function as the all-in-one tool.  
-
-2026-11-01  
-    - Updated the Zhang et al. model coefficients, Kc and m(Ic) functions, and geology-specific "a" values.  
-
-2026-11-05  
-    - Introduced `geology.ipynb` to query Wills et al. (2015) surficial geology units in `dev/utilities`.  
-
-2026-11-10  
-    - Introduced `topo.ipynb` and `groundwater.ipynb` to query USGS topo elevation and Ma et al. 2026 groundwater data in `dev/utilities`.  
-    - Packaged the tool for PyPI as `cpt-vs-tool` (`pip install cpt-vs-tool`): `scpt_tool.py` moved to `src/cpt_vs_tool/vs.py`, and the notebooks now use `from cpt_vs_tool import ...`.  
+See [CHANGELOG.md](https://github.com/stefan5kp/cpt_vs_tool/blob/main/CHANGELOG.md) for the full history of updates.
 
 ## Citations  
 Zhang, ZS, SJ Brandenberg, JP Stewart (2026). Algorithm for interpreting velocity profiles from seismic Cone Penetration Test data, 13th National Conference on Earthquake Engineering, Portland, OR, EERI  
